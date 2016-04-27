@@ -1,0 +1,15 @@
+<launch>
+
+    <param name="robot_description"
+        command="$(find xacro)/xacro.py '$(find tinker_description)/urdf/base/base.urdf.xacro'" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher">
+        <!--param name="tf_prefix" type="string" value="/" /-->
+    </node>
+
+    <include file="$(find k2_client)/launch/k2_client.launch" />
+    <include file="$(find tinker_object_recognition)/launch/tinker_object_recognition.launch" />
+    
+    <node name="arm_controller" pkg="tk_arm" type="arm_controller" output="screen" />   
+    <include file="$(find tinker_object_recognition)/launch/tinker_bow_run.launch" />
+
+</launch>
