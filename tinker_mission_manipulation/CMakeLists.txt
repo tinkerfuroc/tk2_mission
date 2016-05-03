@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(tk2_mission_manipulation)
+project(tinker_mission_manipulation)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -100,7 +100,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES tk2_mission_manipulation
+#  LIBRARIES tinker_mission_manipulation
 #  CATKIN_DEPENDS rospy smach
 #  DEPENDS system_lib
 )
@@ -117,14 +117,14 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(tk2_mission_manipulation
-#   src/${PROJECT_NAME}/tk2_mission_manipulation.cpp
+# add_library(tinker_mission_manipulation
+#   src/${PROJECT_NAME}/tinker_mission_manipulation.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(tk2_mission_manipulation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(tinker_mission_manipulation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 # add_executable(tk2_mission_manipulation_node src/tk2_mission_manipulation_node.cpp)
@@ -153,7 +153,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS tk2_mission_manipulation tk2_mission_manipulation_node
+# install(TARGETS tinker_mission_manipulation tk2_mission_manipulation_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -1,0 +1,9 @@
+<launch>
+    <include file="$(find tinker_description)/launch/tinker_description.launch"/>
+    <include file="$(find tk_dynamixel_control)/launch/controller_manager.launch"/>
+    <include file="$(find tk_dynamixel_control)/launch/meta_controller.launch"/>
+    <include file="$(find tk_hardware_interface)/launch/arm_zynq_control.launch"/>
+    <include file="$(find tk_hardware_interface)/launch/odom_zynq_control.launch"/>
+
+    <!--include file="$(find tk_arm)/launch/arm_planner.launch"/-->
+</launch>
