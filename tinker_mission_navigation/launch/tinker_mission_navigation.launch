@@ -1,0 +1,6 @@
+<launch>
+    <!--include file="$(find tinker_2dnav)/launch/move_base.launch"/-->
+    <node name="tinker_mission_navigation" pkg="tinker_mission_navigation" type="navigation.py" output="screen">
+        <param name="waypoint_xml" value="$(find tinker_knowledge)/position/stage.xml" type="string"/>
+    </node>
+</launch>
