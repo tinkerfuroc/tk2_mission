@@ -120,17 +120,6 @@ def main():
                 Sequence.add('Gripper_Photo', GripperState(GRIPPER_OPEN))
                 Sequence.add('Move_For_Photo', MoveArmState(Point(-0.7, 0, 0)),
                              transitions={'aborted': 'continue'})
-                Sequence.add('Arm_Find_Object',
-                             SimpleActionState(action_name='/arm_find_objects',
-                                               action_spec=ObjectAction,
-                                               input_keys=['objects', 'object_index'],
-                                               output_keys=['objects'],
-                                               result_cb=image_compensate),
-                             transitions={'aborted': 'continue'})
-
-                Sequence.add('Move_For_Compensate', MoveArmState(Point(-0.7, 0, 0)),
-                             transitions={'aborted': 'continue'})
-
                 concurrence = Concurrence(outcomes=['succeeded', 'aborted', 'preempted'],
                                           default_outcome='succeeded',
                                           child_termination_cb=lambda x: True,
@@ -145,7 +134,7 @@ def main():
                 Sequence.add('Gripper_Fetch', GripperState(GRIPPER_CLOSE))
                 Sequence.add('Move_Fetch_Back', MoveArmState(Point(-1, 0, 0)))
                 Sequence.add('Move_Down', MoveArmState(Point(-1, 0, 0), abs_z=0.65))
-                Sequence.add('Move_Put', MoveArmState(Point(0, 0, 0), abs_z=0.65))
+                Sequence.add('Move_Put', MoveArmState(Point(-0.7, 0, 0), abs_z=0.65))
                 Sequence.add('Gripper_Put', GripperState(GRIPPER_OPEN))
                 Sequence.add('Move_Put_Back', MoveArmState(Point(-1, 0, 0), abs_z=0.65),
                              transitions={'succeeded': 'continue'})
