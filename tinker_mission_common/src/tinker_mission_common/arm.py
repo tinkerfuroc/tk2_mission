@@ -4,9 +4,9 @@ from termcolor import colored
 
 from geometry_msgs.msg import PointStamped, Point
 from smach_ros import SimpleActionState
-from tk_arm.msg import ArmReachObjectAction, ArmReachObjectGoal, ArmInitAction, ArmHandAction, ArmHandGoal
+from tk_arm.msg import ArmReachObjectAction, ArmReachObjectGoal, ArmInitAction, ArmInitGoal, ArmHandAction, ArmHandGoal
 
-__all__ = ['MoveArmState', 'GripperState']
+__all__ = ['MoveArmState', 'ArmModeState', 'GripperState']
 
 
 class MoveArmState(SimpleActionState):
@@ -33,10 +33,24 @@ class MoveArmState(SimpleActionState):
         goal = ArmReachObjectGoal(pos=goal_point, state=0)
         return goal
 
-GRIPPER_OPEN = False
-GRIPPER_CLOSE = True
+
+
+class ArmModeState(SimpleActionState):
+    Arm_Mode_Init = 0
+    Arm_Mode_Ready = 1
+    Arm_Mode_Kinect = 2
+
+    def __init__(self, mode=Arm_Mode_Init):
+        super(ArmModeState, self).__init__(action_name='/arm_reset',
+                action_spec=ArmInitAction,
+                goal=ArmInitGoal(state=mode))
+                
+
 
 class GripperState(SimpleActionState):
+    GRIPPER_OPEN = False
+    GRIPPER_CLOSE = True
+
     def __init__(self, gripper_state=GRIPPER_CLOSE):
         super(GripperState, self).__init__(action_name='/arm_hand',
                                            action_spec=ArmHandAction,

@@ -18,6 +18,8 @@ def main():
     # Main StateMachine
     state = StateMachine(outcomes=['succeeded', 'preempted', 'aborted'])
     with state:
+        StateMachine.add('0_wait_for_start', MonitorStartButtonState(), transitions={'valid': '0_wait_for_start','invalid': '0_arm_mode'})
+        StateMachine.add('0_arm_mode', ArmModeState(ArmModeState.Arm_Mode_Kinect), transitions={'succeeded':'1_Start'})
         StateMachine.add('1_Start', MonitorKinectBodyState(), transitions={'valid':'1_Start', 'invalid':'Sequence'})
         sequence = Sequence(outcomes=['succeeded', 'preempted', 'aborted'],
                             connector_outcome='succeeded')
@@ -29,6 +31,11 @@ def main():
             sequence.add('4_turn_back', ChassisSimpleMoveState(theta=3.15)) 
             sequence.add('5_1_find_operator', FindPersonState()) 
             sequence.add('5_2_point_operator', MoveArmState(offset=Point(0, 0, 0)), remapping={'target':'person_pose'}) 
+            sequence.add('5_3_say', SpeakState('I have found you'))
+            sequence.add('5_4_wait', DelayState(5))
+            sequence.add('6_1_arm_init', ArmModeState(ArmModeState.Arm_Mode_Init))
+            sequence.add('6_2_report', GenerateReportState(image='human_result.png', 
+                text='BLUE for male, RED for female and GREEN for opetator'))
 
         StateMachine.add('Sequence', sequence, {'succeeded': 'succeeded', 'aborted': 'aborted'})
 

@@ -1,7 +1,7 @@
 <launch>
+    <include file="$(find tk_hardware_interface)/launch/start_button.launch"/>
     <include file="$(find k2_client)/launch/k2_client.launch"/>
     <include file="$(find tk_arm)/launch/arm_control.launch"/>
     <include file="$(find tinker_human_identify)/launch/human_identify.launch"/>
-    <include file="$(find tinker_voice_recognize)/launch/keywords_recognize.launch"/>
     <include file="$(find tinker_tts)/launch/tts.launch"/>
 </launch>
