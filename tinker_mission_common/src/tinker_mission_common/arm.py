@@ -21,13 +21,15 @@ class MoveArmState(SimpleActionState):
 
     @staticmethod
     def goal_callback(userdata, goal, offset, **kwargs):
-        object_pos = userdata.target
+        if kwargs.has_key('target_key'):
+            object_pos = userdata.target[kwargs['target_key']]
+        else:
+            object_pos = userdata.target
+
         goal_point = copy.deepcopy(object_pos)
         goal_point.point.x += offset.x
         goal_point.point.y += offset.y
         goal_point.point.z += offset.z
-        if kwargs.has_key('abs_z'):
-            goal_point.point.z = kwargs['abs_z']
         point = goal_point.point
         rospy.loginfo(colored("[Arm] (%f, %f, %f)", 'green'), point.x, point.y, point.z)
         goal = ArmReachObjectGoal(pos=goal_point, state=0)

@@ -3,73 +3,25 @@
 import rospy
 import tf
 import copy
-
-from numpy import interp
 from termcolor import colored
 
-from actionlib_msgs.msg import GoalStatus
+from tinker_mission_common.all import *
 from geometry_msgs.msg import PointStamped, Point
 from std_msgs.msg import Bool
 from smach import Iterator, StateMachine, Sequence, Concurrence
-from smach_ros import ServiceState, SimpleActionState, MonitorState, IntrospectionServer
+from smach_ros import ServiceState, MonitorState, IntrospectionServer
 from tinker_vision_msgs.msg import ObjectAction
 from tinker_vision_msgs.srv import FindObjects
-from tk_arm.msg import ArmReachObjectAction, ArmReachObjectGoal, ArmInitAction, ArmHandAction, ArmHandGoal
-
-GRIPPER_OPEN = False
-GRIPPER_CLOSE = True
-
-K_Image_x = (-300, -106, 10.5, 128, 300)
-K_Arm_y = (0.15, 0.1, 0, -0.1, -0.15)
-K_Image_y = (-300, -170, 170, 300)
-K_Arm_z = (0.20, 0.10, 0., -0.10)
 
 
-class MoveArmState(SimpleActionState):
-    def __init__(self, offset=Point(x=0, y=0, z=0), **kwargs):
-        super(MoveArmState, self).__init__(action_name='/tinker_arm_move',
-                                           action_spec=ArmReachObjectAction,
-                                           input_keys=['objects', 'object_index'],
-                                           output_keys=[],
-                                           goal_cb=self.goal_callback,
-                                           goal_cb_args=(offset,),
-                                           goal_cb_kwargs=kwargs)
-
-    @staticmethod
-    def goal_callback(userdata, goal, offset, **kwargs):
-        object_pos = userdata.objects[userdata.object_index]
-        goal_point = copy.deepcopy(object_pos)
-        goal_point.point.x += offset.x
-        goal_point.point.y += offset.y
-        goal_point.point.z += offset.z
-        if kwargs.has_key('abs_z'):
-            goal_point.point.z = kwargs['abs_z']
-        point = goal_point.point
-        rospy.loginfo(colored("Object [%d/%d]: (%f, %f, %f)", 'green'), userdata.object_index + 1,
-                      len(userdata.objects),
-                      point.x, point.y, point.z)
-        goal = ArmReachObjectGoal(pos=goal_point, state=0)
-        return goal
-
-
-class GripperState(SimpleActionState):
-    def __init__(self, gripper_state=GRIPPER_CLOSE):
-        super(GripperState, self).__init__(action_name='/arm_hand',
-                                           action_spec=ArmHandAction,
-                                           goal=ArmHandGoal(state=gripper_state))
-
-
-def image_compensate(userdata, status, result):
-    if status == GoalStatus.SUCCEEDED:
-        object_pos = userdata.objects[userdata.object_index].point
-        image_pixel = result.objects.objects[0].pose.pose.pose.position
-        object_pos.y += interp(image_pixel.x, K_Image_x, K_Arm_y)
-        object_pos.z += interp(image_pixel.y, K_Image_y, K_Arm_z)
-        rospy.loginfo(colored('[Image Compensate]', 'green'))
-        rospy.loginfo(colored('[Image pixel] (x=%f y=%f)', 'yellow'), image_pixel.x, image_pixel.y)
-        rospy.loginfo(colored('[Object(compensated)] (%f %f %f)', 'yellow'), object_pos.x, object_pos.y, object_pos.z)
-        return 'succeeded'
-
+def find_div(h, target_level = 1):
+    _levels = [0.10, 0.35, 0.67, 1.06, 1.41, 1.79] 
+    for i in range(0, len(_levels)):
+        if i == len(_levels) - 1:
+            return h - (_levels[i] - _levels[target_level])
+        if _levels[i] <= h < _levels[i + 1]:
+            return h - (_levels[i] - _levels[target_level])
+    return 0
 
 def main():
     rospy.init_node('tinker_mission_manipulation')
@@ -81,9 +33,10 @@ def main():
     state = StateMachine(outcomes=['succeeded', 'preempted', 'aborted'])
     with state:
         def kinect_callback(userdata, result):
-            objects_raw = result.objects
             userdata.objects = []
-            for obj in objects_raw.objects:
+            objects = []
+            sum_x = 0
+            for obj in result.objects.objects:
                 position = obj.pose.pose.pose.position
                 if position.y > 0.4 or position.y < -0.4:
                     continue
@@ -92,68 +45,69 @@ def main():
                 obj.header.stamp = rospy.Time(0)
                 kinect_point = PointStamped(header=obj.header, point=position)
                 odom_point = trans.transformPoint('odom', kinect_point)
-                rospy.loginfo(colored('[Kinect Object(odom)] (%f %f %f)', 'yellow'), odom_point.point.x,
+                sum_x += odom_point.point.x
+                rospy.loginfo(colored('[Kinect Object(odom)] from:(%f %f %f)', 'yellow'), odom_point.point.x,
                               odom_point.point.y, odom_point.point.z)
-                userdata.objects.append(odom_point)
+                objects.append(odom_point)
+
+            avg_x = sum_x / len(objects)
+            
+            for from_point in objects:
+                to_point = copy.deepcopy(from_point)
+                to_point.point.x = avg_x 
+                to_point.point.z = find_div(from_point.point.z)
+                userdata.objects.append({'from': from_point, 'to': to_point})
+                rospy.loginfo(colored('[Kinect Object(odom)] to:(%f %f %f)', 'yellow'), to_point.point.x,
+                              to_point.point.y, to_point.point.z)
             return 'succeeded'
 
+        StateMachine.add('Arm_Mode_Kinect', ArmModeState(ArmModeState.Arm_Mode_Kinect), 
+                transitions={'succeeded': 'S_Kinect_Recognition'})
         StateMachine.add('S_Kinect_Recognition',
-                         ServiceState(service_name='/kinect_find_objects',
-                                      service_spec=FindObjects,
-                                      input_keys=['objects'],
-                                      output_keys=['objects'],
-                                      response_cb=kinect_callback),
-                         transitions={'succeeded': 'IT_Objects_Iterator'})
+                ServiceState(service_name='/kinect_find_objects',
+                    service_spec=FindObjects,
+                    input_keys=['objects'],
+                    output_keys=['objects'],
+                    response_cb=kinect_callback),
+                transitions={'succeeded': 'IT_Objects_Iterator'})
 
         objects_iterator = Iterator(outcomes=['succeeded', 'preempted', 'aborted'],
-                                    input_keys=['objects'],
-                                    output_keys=[],
-                                    it=lambda: range(0, len(state.userdata.objects)),
-                                    it_label='object_index',
-                                    exhausted_outcome='succeeded')
+                input_keys=['objects'], output_keys=[],
+                it=lambda: state.userdata.objects, it_label='target',
+                exhausted_outcome='succeeded')
 
         with objects_iterator:
             fetch_object_sequence = Sequence(outcomes=['succeeded', 'aborted', 'continue', 'preempted'],
-                                             input_keys=['objects', 'object_index'],
+                                             input_keys=['target'],
                                              connector_outcome='succeeded')
             with fetch_object_sequence:
-                Sequence.add('Gripper_Photo', GripperState(GRIPPER_OPEN))
-                Sequence.add('Move_For_Photo', MoveArmState(Point(-0.7, 0, 0)),
-                             transitions={'aborted': 'continue'})
+                Sequence.add('Gripper_Photo', GripperState(GripperState.GRIPPER_OPEN))
+                Sequence.add('Move_For_Photo', MoveArmState(Point(-0.7, 0, 0), target_key='from'))
                 concurrence = Concurrence(outcomes=['succeeded', 'aborted', 'preempted'],
                                           default_outcome='succeeded',
                                           child_termination_cb=lambda x: True,
-                                          input_keys=['objects', 'object_index'])
+                                          input_keys=['target'])
                 with concurrence:
-                    Concurrence.add('Move_Fetch', MoveArmState(Point(0.1, 0, 0)))
-                    Concurrence.add('Gripper_Laser_sensor',
-                                    MonitorState('/gripper_laser_sensor',
-                                                 Bool,
-                                                 cond_cb=lambda x,y: False))
-                Sequence.add('Move_Fetch_Concurrence', concurrence)
-                Sequence.add('Gripper_Fetch', GripperState(GRIPPER_CLOSE))
-                Sequence.add('Move_Fetch_Back', MoveArmState(Point(-1, 0, 0)))
-                Sequence.add('Move_Down', MoveArmState(Point(-1, 0, 0), abs_z=0.65))
-                Sequence.add('Move_Put', MoveArmState(Point(-0.7, 0, 0), abs_z=0.65))
-                Sequence.add('Gripper_Put', GripperState(GRIPPER_OPEN))
-                Sequence.add('Move_Put_Back', MoveArmState(Point(-1, 0, 0), abs_z=0.65),
-                             transitions={'succeeded': 'continue'})
+                    Concurrence.add('Move_Fetch', MoveArmState(Point(0.1, 0, 0), target_key='from'))
+                    Concurrence.add('Gripper_Laser_sensor', MonitorState('/gripper_laser_sensor', Bool, cond_cb=lambda x,y: False))
 
-            Iterator.set_contained_state('Seq_Fetch_Object', fetch_object_sequence,
-                                         loop_outcomes=['continue'])
+                Sequence.add('Move_Fetch_Concurrence', concurrence)
+                Sequence.add('Gripper_Fetch', GripperState(GripperState.GRIPPER_CLOSE))
+                Sequence.add('Move_Fetch_Back', MoveArmState(Point(-1, 0, 0), target_key='from'))
+                Sequence.add('Move_Down', MoveArmState(Point(-0.8, 0, 0), target_key='to'))
+                Sequence.add('Move_Put', MoveArmState(Point(0, 0, 0), target_key='to'))
+                Sequence.add('Gripper_Put', GripperState(GripperState.GRIPPER_OPEN))
+                Sequence.add('Move_Put_Back', MoveArmState(Point(-1, 0, 0), target_key='to'), transitions={'succeeded': 'continue'})
+
+            Iterator.set_contained_state('Seq_Fetch_Object', fetch_object_sequence, loop_outcomes=['continue'])
 
         # end of objects_iterator
-        StateMachine.add('IT_Objects_Iterator',
-                         objects_iterator,
-                         {'succeeded': 'A_Move_Reset',
-                          'aborted': 'A_Move_Reset'})
+        StateMachine.add('IT_Objects_Iterator', objects_iterator,
+                transitions= {'succeeded': 'A_Move_Reset', 'aborted': 'A_Move_Reset'})
 
-        StateMachine.add('A_Move_Reset',
-                         SimpleActionState('/arm_reset',
-                                           ArmInitAction,
-                                           input_keys=[]),
-                         transitions={'succeeded': 'succeeded',
-                                      'aborted': 'aborted'})
+        StateMachine.add('A_Move_Reset', ArmModeState(ArmModeState.Arm_Mode_Init),
+                         transitions={'succeeded': 'succeeded', 'aborted': 'aborted'})
+
     # Run state machine introspection server for smach viewer
     intro_server = IntrospectionServer('tinker_mission_manipulation', state, '/tinker_mission_manipulation')
     intro_server.start()
