@@ -14,6 +14,7 @@ from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import String
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 
+from tinker_mission_common.all import *
 
 
 class WayPointGoalState(SimpleActionState):
@@ -36,17 +37,9 @@ class WayPointGoalState(SimpleActionState):
         goal = MoveBaseGoal(target_pose=pose_stamped)
         return goal
 
+class FollowMe():
+	#FIXME
 
-class SpeakState(State):
-    pub = rospy.Publisher('/tts', String, queue_size=10)
-    def __init__(self, text):
-        State.__init__(self, outcomes=['succeeded'])
-        self.text = text
-
-    def execute(self, userdata):
-        rospy.loginfo(colored('[Speak] %s','green'), self.text)
-        SpeakState.pub.publish(self.text)
-        return 'succeeded'
 
 
 def main():
@@ -68,8 +61,24 @@ def main():
         with sequence:
             Sequence.add('GoToWaypoin1', WayPointGoalState('waypoint1'))
             Sequence.add('ArriveWaypoint1', SpeakState('I have arrived at way point one'))
+
             Sequence.add('GoToWaypoin2', WayPointGoalState('waypoint2'))
+	    #FIXME
+	    #aborted to itself
             Sequence.add('ArriveWaypoint2', SpeakState('I have arrived at way point two'))
+
+            Sequence.add('GoToWaypoin3', WayPointGoalState('waypoint2'))
+            Sequence.add('ArriveWaypoint3', SpeakState('I have arrived at way point three'))
+
+	    Sequence.add('FindWalkers', FollowMe()) #publish walkers pose
+	    #FIXME
+	    Sequence.add('StopCommandAndGo', SpeakState('Please GO. If you want to stop, say stop tinker'))
+	    Sequence.add('KeyWordsRecognition', KeywordsRecognizeState('stop tinker'))
+
+	    Sequence.add('GoToWaypoin3Again', WayPointGoalState('waypoint3'))
+            Sequence.add('ArriveWaypoint3Again', SpeakState('I have arrived at way point three'))
+            Sequence.add('GoOut', WayPointGoalState('waypoint0'))
+	   
 
         StateMachine.add('Sequence', sequence, {'succeeded': 'succeeded', 'aborted': 'aborted'})
 
