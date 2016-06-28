@@ -13,5 +13,5 @@ class DelayState(State):
 
     def execute(self, userdata):
         rospy.loginfo(colored('[Delay] %d','green'), self.time)
-        rospy.time.sleep(self.time)
+        rospy.sleep(self.time)
         return 'succeeded'

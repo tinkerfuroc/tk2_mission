@@ -1,33 +1,45 @@
 import rospy
 
-from smach_ros import ServiceState
+from smach_ros import ServiceState, MonitorState
 from tinker_vision_msgs.srv import FindOperator
-from std_srvs.srv import Empty
+from k2_client.msg import BodyArray
+from std_srvs.srv import Trigger
 
-__all__ = ['TrainPersonState', 'FindPersonState']
+__all__ = ['MonitorKinectBodyState', 'TrainPersonState', 'FindPersonState']
+
+
+class MonitorKinectBodyState(MonitorState):
+    def __init__(self):
+        super(MonitorKinectBodyState, self).__init__(
+                topic='/head/kinect2/bodyArray',
+                msg_type=BodyArray,
+                cond_cb=lambda x,y: False)
 
 
 class TrainPersonState(ServiceState):
     def __init__(self):
-        super(ServiceState, self).__init__(
+        super(TrainPersonState, self).__init__(
                 service_name='/train_operator',
-                service_spec=Empty,
+                service_spec=Trigger,
                 input_keys=[],
                 output_keys=[])
         
 
 class FindPersonState(ServiceState):
     def __init__(self):
-        super(ServiceState, self).__init__(
+        super(FindPersonState, self).__init__(
                 service_name='/find_operator',
                 service_spec=FindOperator,
                 input_keys=[],
                 output_keys=['person_pose'],
-                response_cb=find_person_callback)
+                response_cb=FindPersonState.find_person_callback)
 
     @staticmethod
     def find_person_callback(userdata, result):
-        result.pose.position.z -= 0.1
-        userdata.person_pose = result
-        return 'succeeded'
+        if result is not None:
+            result.loc.point.x -= 0.5
+            userdata.person_pose = result.loc
+            return 'succeeded'
+        else:
+            return 'aborted'
 
