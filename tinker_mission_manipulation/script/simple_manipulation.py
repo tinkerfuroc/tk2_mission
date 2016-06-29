@@ -62,14 +62,18 @@ def main():
             return 'succeeded'
 
         StateMachine.add('Arm_Mode_Kinect', ArmModeState(ArmModeState.Arm_Mode_Kinect), 
-                transitions={'succeeded': 'S_Kinect_Recognition'})
+                transitions={'succeeded': 'Start_Button'})
+        StateMachine.add('Start_Button', MonitorStartButtonState(), 
+                transitions={'valid': 'Start_Button', 'invalid': 'S_Kinect_Recognition'})
         StateMachine.add('S_Kinect_Recognition',
                 ServiceState(service_name='/kinect_find_objects',
                     service_spec=FindObjects,
                     input_keys=['objects'],
                     output_keys=['objects'],
                     response_cb=kinect_callback),
-                transitions={'succeeded': 'IT_Objects_Iterator'})
+                transitions={'succeeded': 'Generate_Report'})
+        StateMachine.add('Generate_Report', GenerateReportState(image='result.png', text='object_names.txt'), 
+                transitions={'succeeded': 'IT_Objects_Iterator'} )
 
         objects_iterator = Iterator(outcomes=['succeeded', 'preempted', 'aborted'],
                 input_keys=['objects'], output_keys=[],
@@ -93,11 +97,11 @@ def main():
 
                 Sequence.add('Move_Fetch_Concurrence', concurrence)
                 Sequence.add('Gripper_Fetch', GripperState(GripperState.GRIPPER_CLOSE))
-                Sequence.add('Move_Fetch_Back', MoveArmState(Point(-1, 0, 0), target_key='from'))
-                Sequence.add('Move_Down', MoveArmState(Point(-0.8, 0, 0), target_key='to'))
+                Sequence.add('Move_Fetch_Back', MoveArmState(Point(-0.6, 0, 0), target_key='from'))
+                Sequence.add('Move_Down', MoveArmState(Point(-0.5, 0, 0), target_key='to'))
                 Sequence.add('Move_Put', MoveArmState(Point(0, 0, 0), target_key='to'))
                 Sequence.add('Gripper_Put', GripperState(GripperState.GRIPPER_OPEN))
-                Sequence.add('Move_Put_Back', MoveArmState(Point(-1, 0, 0), target_key='to'), transitions={'succeeded': 'continue'})
+                Sequence.add('Move_Put_Back', MoveArmState(Point(-0.5, 0, 0), target_key='to'), transitions={'succeeded': 'continue'})
 
             Iterator.set_contained_state('Seq_Fetch_Object', fetch_object_sequence, loop_outcomes=['continue'])
 

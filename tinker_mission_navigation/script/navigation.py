@@ -57,25 +57,25 @@ def main():
     state = StateMachine(outcomes=['succeeded', 'preempted', 'aborted'])
     with state:
         sequence = Sequence(outcomes=['succeeded', 'preempted', 'aborted'],
-                            connector_outcome='succeeded')
+                connector_outcome='succeeded')
         with sequence:
             Sequence.add('GoToWaypoin1', WayPointGoalState('waypoint1'))
             Sequence.add('ArriveWaypoint1', SpeakState('I have arrived at way point one'))
 
             Sequence.add('GoToWaypoin2', WayPointGoalState('waypoint2'))
-	    #FIXME
-	    #aborted to itself
+            #FIXME
+            #aborted to itself
             Sequence.add('ArriveWaypoint2', SpeakState('I have arrived at way point two'))
 
             Sequence.add('GoToWaypoin3', WayPointGoalState('waypoint2'))
             Sequence.add('ArriveWaypoint3', SpeakState('I have arrived at way point three'))
 
-	    Sequence.add('FindWalkers', FollowMe()) #publish walkers pose
-	    #FIXME
-	    Sequence.add('StopCommandAndGo', SpeakState('Please GO. If you want to stop, say stop tinker'))
-	    Sequence.add('KeyWordsRecognition', KeywordsRecognizeState('stop tinker'))
+            Sequence.add('FindWalkers', FollowMe()) #publish walkers pose
+            #FIXME
+            Sequence.add('StopCommandAndGo', SpeakState('Please GO. If you want to stop, say stop tinker'))
+            Sequence.add('KeyWordsRecognition', KeywordsRecognizeState('stop tinker'))
 
-	    Sequence.add('GoToWaypoin3Again', WayPointGoalState('waypoint3'))
+            Sequence.add('GoToWaypoin3Again', WayPointGoalState('waypoint3'))
             Sequence.add('ArriveWaypoint3Again', SpeakState('I have arrived at way point three'))
             Sequence.add('GoOut', WayPointGoalState('waypoint0'))
 	   

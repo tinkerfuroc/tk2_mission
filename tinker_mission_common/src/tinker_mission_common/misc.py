@@ -45,7 +45,7 @@ class GenerateReportState(State):
         pdf.add_page()
         pdf.image(os.path.join(home, self.image), w=100)
         pdf.ln(20)
-        pdf.cell(0, txt=self.text)
+        pdf.cell(0, txt=open(os.path.join(home, self.text), 'r').read())
         pdf.output(os.path.join(home, 'Tinker-'+time.strftime("%H-%M-%S")+'.pdf'), 'F')
         return 'succeeded'
 

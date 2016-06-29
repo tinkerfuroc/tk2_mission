@@ -34,8 +34,7 @@ def main():
             sequence.add('5_3_say', SpeakState('I have found you'))
             sequence.add('5_4_wait', DelayState(5))
             sequence.add('6_1_arm_init', ArmModeState(ArmModeState.Arm_Mode_Init))
-            sequence.add('6_2_report', GenerateReportState(image='human_result.png', 
-                text='BLUE for male, RED for female and GREEN for opetator'))
+            sequence.add('6_2_report', GenerateReportState(image='human_result.png', text='human_result.txt'))
 
         StateMachine.add('Sequence', sequence, {'succeeded': 'succeeded', 'aborted': 'aborted'})
 
