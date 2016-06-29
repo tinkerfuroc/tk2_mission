@@ -1,0 +1,14 @@
+<launch>
+    <arg name="map_file" value="$(find tinker_2dnav)/map/area_b.yaml"/>
+    <include file="$(find tinker_2dnav)/launch/move_base.launch">
+        <arg name="map_file" value="$(arg map_file)"/>
+    </include>
+    <include file="$(find tk_hardware_interface)/launch/start_button.launch"/>
+    <include file="$(find tinker_tts)/launch/tts.launch"/>
+    <include file="$(find tinker_voice_recognize)/launch/keywords_recognize.launch"/>
+
+    <node name="tinker_mission_navigation" pkg="tinker_mission_navigation" type="RIPS.py" output="screen">
+        <param name="waypoint_xml" value="$(find tinker_knowledge)/position/RIPS.xml" type="string"/>
+    </node>
+    <node name="smach_viewer" pkg="smach_viewer" type="smach_viewer.py"/>
+</launch>
