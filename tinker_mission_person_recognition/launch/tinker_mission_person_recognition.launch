@@ -4,4 +4,7 @@
     <include file="$(find tk_arm)/launch/arm_control.launch"/>
     <include file="$(find tinker_human_identify)/launch/human_identify.launch"/>
     <include file="$(find tinker_tts)/launch/tts.launch"/>
+
+    <node name="mission_person_recogition" pkg="tinker_mission_person_recognition" type="person_recognition.py"/>
+    <node name="smach_viewer" pkg="smach_viewer" type="smach_viewer.py"/>
 </launch>

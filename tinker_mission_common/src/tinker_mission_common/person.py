@@ -37,7 +37,7 @@ class FindPersonState(ServiceState):
     @staticmethod
     def find_person_callback(userdata, result):
         if result is not None:
-            result.loc.point.x -= 0.5
+            result.loc.point.x -= 1.2
             userdata.person_pose = result.loc
             return 'succeeded'
         else:

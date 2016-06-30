@@ -1,1 +1,1 @@
-__all__ = ['arm', 'audio', 'chassis', 'person', 'misc']
+__all__ = ['arm', 'audio', 'navigation', 'person', 'misc']

@@ -3,17 +3,18 @@ from termcolor import colored
 
 from smach_ros import SimpleActionState
 from actionlib_msgs.msg import GoalStatus
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Pose2D
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from tinker_msgs.msg import SimpleMoveAction, SimpleMoveGoal, FollowAction
+from tinker_msgs.msg import SimpleMoveAction, SimpleMoveGoal, FollowAction, FollowGoal
+from tinker_vision_msgs.msg import EmptyAction, EmptyGoal
 
-__all__ = ['ChassisSimpleMoveState', 'WayPointGoalState', 'FollowMeState']
+__all__ = ['ChassisSimpleMoveState', 'WayPointGoalState', 'FollowTrainState', 'FollowMeState']
 
 
 class ChassisSimpleMoveState(SimpleActionState):
     def __init__(self, x=0, y=0, theta=0):
-        super(ChassisSimpleMoveState, self).__init__(action_name='/simple_move',
-                action_spec=SimpleMoveAction,
+        super(ChassisSimpleMoveState, self).__init__(
+                action_name='/simple_move', action_spec=SimpleMoveAction,
                 goal = SimpleMoveGoal(target=Pose2D(x=x, y=y, theta=theta)))
 
 
@@ -35,10 +36,18 @@ class WayPointGoalState(SimpleActionState):
         goal = MoveBaseGoal(target_pose=pose_stamped)
         return goal
 
+class FollowTrainState(SimpleActionState):
+    def __init__(self):
+        super(FollowTrainState, self).__init__(
+                action_name='/tk2_vision/hum_recog_enable',
+                input_keys=[], output_keys=[],
+                action_spec=EmptyAction, goal=EmptyGoal())
+
 
 class FollowMeState(SimpleActionState):
     def __init__(self):
         super(FollowMeState, self).__init__(
                 action_name='/follow_action', action_spec=FollowAction,
-                input_keys=[], output_keys=[])
+                input_keys=[], output_keys=[],
+                goal=FollowGoal())
 

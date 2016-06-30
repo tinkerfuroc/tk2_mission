@@ -1,5 +1,5 @@
 from .arm import *
 from .audio import *
-from .chassis import *
+from .navigation import *
 from .person import *
 from .misc import *

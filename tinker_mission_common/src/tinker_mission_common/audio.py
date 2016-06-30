@@ -19,7 +19,7 @@ class SpeakState(State):
     def execute(self, userdata):
         rospy.loginfo(colored('[Speak] %s','green'), self.text)
         SpeakState.pub.publish(self.text)
-        rospy.sleep(5)
+        rospy.sleep(len(self.text) // 10)
         return 'succeeded'
 
 class KeywordsRecognizeState(SimpleActionState):

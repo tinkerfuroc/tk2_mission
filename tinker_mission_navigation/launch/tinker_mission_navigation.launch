@@ -1,7 +1,13 @@
 <launch>
-    <include file="$(find tinker_2dnav)/launch/move_base.launch"/>
-    <node name="tinker_mission_navigation" pkg="tinker_mission_navigation" type="navigation.py" output="screen">
-        <param name="waypoint_xml" value="$(find tinker_knowledge)/position/stage.xml" type="string"/>
+    <include file="$(find tk_hardware_interface)/launch/start_button.launch"/>
+    <include file="$(find tinker_tts)/launch/tts.launch"/>
+    <!--include file="$(find tinker_voice_recognize)/launch/keywords_recognize.launch"/>
+    <include file="$(find tinker_human_recognition)/launch/tinker_cmt_track.launch"/>
+
+    <node name="simple_follow" pkg="tinker_human_track" type="simple_follow.py"/-->
+    <node name="detect_door" pkg="tinker_mission_common" type="detect_door.py"/>
+    <node name="tinker_mission_navigation" pkg="tinker_mission_navigation" type="simple-navigation.py" output="screen">
+        <param name="waypoint_xml" value="$(find tinker_knowledge)/position/arena_a.xml" type="string"/>
     </node>
-    <node name="tinker_tts" pkg="tinker_tts" type="tts.py"/>
+    <node name="smach_viewer" pkg="smach_viewer" type="smach_viewer.py"/>
 </launch>
