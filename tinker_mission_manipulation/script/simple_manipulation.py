@@ -12,10 +12,11 @@ from smach import Iterator, StateMachine, Sequence, Concurrence
 from smach_ros import ServiceState, MonitorState, IntrospectionServer
 from tinker_vision_msgs.msg import ObjectAction
 from tinker_vision_msgs.srv import FindObjects
+from math import fabs
 
 
 def find_div(h, target_level = 1):
-    _levels = [0.10, 0.35, 0.67, 1.06, 1.41, 1.79] 
+    _levels = [0.10, 0.44, 0.78, 1.12, 1.46, 1.80] 
     for i in range(0, len(_levels)):
         if i == len(_levels) - 1:
             return h - (_levels[i] - _levels[target_level])
@@ -38,8 +39,12 @@ def main():
             sum_x = 0
             for obj in result.objects.objects:
                 position = obj.pose.pose.pose.position
-                if position.y > 0.4 or position.y < -0.4:
+                if position.y > 0.5 or position.y < -0.5:
                     continue
+                _levels = [0.10, 0.44, 0.78, 1.12, 1.46, 1.80] 
+                for l in _levels:
+                    if fabs(l - position.z) < 0.05:
+                        position.z = l + 0.05
                 if position.z > 1.1:
                     position.z += 0.05
                 obj.header.stamp = rospy.Time(0)
@@ -59,6 +64,7 @@ def main():
                 userdata.objects.append({'from': from_point, 'to': to_point})
                 rospy.loginfo(colored('[Kinect Object(odom)] to:(%f %f %f)', 'yellow'), to_point.point.x,
                               to_point.point.y, to_point.point.z)
+            rospy.loginfo(colored('Total Object: %d','green'), len(objects))
             return 'succeeded'
 
         StateMachine.add('Arm_Mode_Kinect', ArmModeState(ArmModeState.Arm_Mode_Kinect), 
@@ -85,23 +91,25 @@ def main():
                                              input_keys=['target'],
                                              connector_outcome='succeeded')
             with fetch_object_sequence:
+                Sequence.add('Speak', SpeakState('New Object recognized'))
                 Sequence.add('Gripper_Photo', GripperState(GripperState.GRIPPER_OPEN))
-                Sequence.add('Move_For_Photo', MoveArmState(Point(-0.7, 0, 0), target_key='from'))
+                Sequence.add('Move_For_Photo', MoveArmState(Point(-0.7, 0, 0), target_key='from'), 
+                        transitions={'aborted':'continue'})
                 concurrence = Concurrence(outcomes=['succeeded', 'aborted', 'preempted'],
                                           default_outcome='succeeded',
                                           child_termination_cb=lambda x: True,
                                           input_keys=['target'])
                 with concurrence:
-                    Concurrence.add('Move_Fetch', MoveArmState(Point(0.1, 0, 0), target_key='from'))
+                    Concurrence.add('Move_Fetch', MoveArmState(Point(0.06, 0, 0), target_key='from'))
                     Concurrence.add('Gripper_Laser_sensor', MonitorState('/gripper_laser_sensor', Bool, cond_cb=lambda x,y: False))
 
                 Sequence.add('Move_Fetch_Concurrence', concurrence)
                 Sequence.add('Gripper_Fetch', GripperState(GripperState.GRIPPER_CLOSE))
-                Sequence.add('Move_Fetch_Back', MoveArmState(Point(-0.6, 0, 0), target_key='from'))
-                Sequence.add('Move_Down', MoveArmState(Point(-0.5, 0, 0), target_key='to'))
+                Sequence.add('Move_Fetch_Back', MoveArmState(Point(-0.7, 0, 0), target_key='from'))
+                Sequence.add('Move_Down', MoveArmState(Point(-0.6, 0, 0), target_key='to'))
                 Sequence.add('Move_Put', MoveArmState(Point(0, 0, 0), target_key='to'))
                 Sequence.add('Gripper_Put', GripperState(GripperState.GRIPPER_OPEN))
-                Sequence.add('Move_Put_Back', MoveArmState(Point(-0.5, 0, 0), target_key='to'), transitions={'succeeded': 'continue'})
+                Sequence.add('Move_Put_Back', MoveArmState(Point(-0.6, 0, 0), target_key='to'), transitions={'succeeded': 'continue'})
 
             Iterator.set_contained_state('Seq_Fetch_Object', fetch_object_sequence, loop_outcomes=['continue'])
 

@@ -50,7 +50,7 @@ class GenerateReportState(State):
 
         home = expanduser("~")
         pdf = FPDF()
-        pdf.set_font('Arial', 'B', 16)
+        pdf.set_font('Arial', 'B', 8)
         pdf.add_page()
         pdf.image(os.path.join(home, self.image), w=100)
         pdf.ln(20)
